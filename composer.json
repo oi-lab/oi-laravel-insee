@@ -22,21 +22,21 @@
     },
     "autoload": {
         "psr-4": {
-            "OiLab\\Insee\\": "src/"
+            "OiLab\\OiLaravelInsee\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "OiLab\\Insee\\Tests\\": "tests/"
+            "OiLab\\OiLaravelInsee\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "OiLab\\Insee\\OiLaravelInseeServiceProvider"
+                "OiLab\\OiLaravelInsee\\OiLaravelInseeServiceProvider"
             ],
             "aliases": {
-                "Insee": "OiLab\\Insee\\Facades\\Insee"
+                "Insee": "OiLab\\OiLaravelInsee\\Facades\\Insee"
             }
         }
     },
