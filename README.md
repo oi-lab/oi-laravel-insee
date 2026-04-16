@@ -27,7 +27,7 @@ INSEE_BASE_URL=https://api.insee.fr/api-sirene/3.11  # Optional
 INSEE_CACHE_DURATION=23  # Optional, in hours
 ```
 
-You can obtain your API credentials from [INSEE API Portal](https://api.insee.fr/catalogue/).
+You can obtain your API credentials from [INSEE API Portal](https://portail-api.insee.fr/).
 
 ## Usage
 
@@ -194,6 +194,30 @@ All methods return arrays containing the API response. Successful responses incl
 composer test
 ```
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+When contributing:
+1. Write tests for new features
+2. Ensure all tests pass: `vendor/bin/pest`
+3. Follow existing code style
+4. Update documentation as needed
+
 ## License
 
-The MIT License (MIT). Please see License File for more information.
+This package is open-source software licensed under the [MIT license](LICENSE).
+
+## Credits
+
+**[Olivier Lacombe](https://www.olacombe.com)** - Creator and maintainer
+
+Olivier is a Product & Technology Director based in Montpellier, France, with over 20 years of experience innovating in UX/UI and emerging technologies. He specializes in guiding enterprises toward cutting-edge digital solutions, combining user-centered design with continuous optimization and artificial intelligence integration.
+
+**Projects & Resources:**
+- [OnAI](https://onai.olacombe.com) - Training courses and masterclasses on generative AI for businesses
+- [Promptr](https://promptr.olacombe.com) - Prompt engineering Management Platform
+
+## Support
+
+For support, please open an issue on the [GitHub repository](https://github.com/oi-lab/oi-laravel-insee/issues).
