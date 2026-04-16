@@ -1,8 +1,9 @@
 <?php
 
-namespace OiLab\Insee\Facades;
+namespace OiLab\OiLaravelInsee\Facades;
 
 use Illuminate\Support\Facades\Facade;
+use OiLab\OiLaravelInsee\Client;
 
 /**
  * @method static array findSiret(string $siret)
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static array searchEstablishments(array $params)
  * @method static array getApiStatus()
  *
- * @see \OiLab\Insee\Client
+ * @see Client
  */
 class Insee extends Facade
 {

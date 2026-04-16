@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use OiLab\Insee\Client;
+use OiLab\OiLaravelInsee\Client;
 
 it('can find a SIRET', function () {
     Http::fake([

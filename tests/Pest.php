@@ -1,5 +1,5 @@
 <?php
 
-use OiLab\Insee\Tests\TestCase;
+use OiLab\OiLaravelInsee\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);

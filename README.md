@@ -1,5 +1,10 @@
 # OI Laravel INSEE
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/oi-lab/oi-laravel-insee.svg)](https://packagist.org/packages/oi-lab/oi-laravel-insee)
+[![Total Downloads](https://img.shields.io/packagist/dt/oi-lab/oi-laravel-insee.svg)](https://packagist.org/packages/oi-lab/oi-laravel-insee)
+[![Tests](https://img.shields.io/github/actions/workflow/status/oi-lab/oi-laravel-insee/tests.yml?label=tests)](https://github.com/oi-lab/oi-laravel-insee/actions)
+[![License](https://img.shields.io/github/license/oi-lab/oi-laravel-insee)](LICENSE)
+
 A Laravel package for integrating with the French INSEE SIRENE API to retrieve company and establishment information.
 
 ## Installation
@@ -34,7 +39,7 @@ You can obtain your API credentials from [INSEE API Portal](https://portail-api.
 ### Using the Facade
 
 ```php
-use OiLab\Insee\Facades\Insee;
+use OiLab\OiLaravelInsee\Facades\Insee;
 
 // Find establishment by SIRET
 $establishment = Insee::findSiret('12345678901234');
@@ -59,7 +64,7 @@ $status = Insee::getApiStatus();
 ### Using Dependency Injection
 
 ```php
-use OiLab\Insee\Client;
+use OiLab\OiLaravelInsee\Client;
 
 class CompanyController extends Controller
 {

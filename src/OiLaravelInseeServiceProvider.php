@@ -1,6 +1,6 @@
 <?php
 
-namespace OiLab\Insee;
+namespace OiLab\OiLaravelInsee;
 
 use Illuminate\Support\ServiceProvider;
 

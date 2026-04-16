@@ -1,8 +1,9 @@
 <?php
 
-namespace OiLab\Insee\Tests;
+namespace OiLab\OiLaravelInsee\Tests;
 
-use OiLab\Insee\OiLaravelInseeServiceProvider;
+use OiLab\OiLaravelInsee\Facades\Insee;
+use OiLab\OiLaravelInsee\OiLaravelInseeServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
@@ -17,7 +18,7 @@ class TestCase extends Orchestra
     protected function getPackageAliases($app): array
     {
         return [
-            'Insee' => \OiLab\Insee\Facades\Insee::class,
+            'Insee' => Insee::class,
         ];
     }
 

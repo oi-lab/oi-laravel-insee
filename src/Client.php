@@ -1,6 +1,6 @@
 <?php
 
-namespace OiLab\Insee;
+namespace OiLab\OiLaravelInsee;
 
 use Exception;
 use Illuminate\Support\Facades\Cache;
