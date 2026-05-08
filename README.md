@@ -1,3 +1,5 @@
+<img src="./assets/github-preview.png" alt="OI Laravel INSEE" width="100%" />
+
 # OI Laravel INSEE
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/oi-lab/oi-laravel-insee.svg)](https://packagist.org/packages/oi-lab/oi-laravel-insee)
