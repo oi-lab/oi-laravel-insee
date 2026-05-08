@@ -195,6 +195,31 @@ All methods return arrays containing the API response. Successful responses incl
 ]
 ```
 
+### Dirigeant (Natural Persons Only)
+
+For natural persons (entrepreneur individuel, micro-entrepreneur, EIRL), the package automatically injects a `dirigeant` key into every `uniteLegale` node of the response:
+
+```php
+$result = Insee::findSiren('123456789');
+
+$result['uniteLegale']['dirigeant'];
+// [
+//     'nom'      => 'DUPONT',  // nomUniteLegale (birth name)
+//     'nomUsage' => 'MARTIN',  // nomUsageUniteLegale (married/usage name, may be null)
+//     'prenom'   => 'Jean',    // prenomUsuelUniteLegale, falls back to prenom1UniteLegale
+//     'sexe'     => 'M',       // 'M' or 'F'
+// ]
+```
+
+The `dirigeant` key is injected at the same locations across all endpoints:
+
+- `findSiret`  → `etablissement.uniteLegale.dirigeant`
+- `findSiren`  → `uniteLegale.dirigeant`
+- `searchCompanies`        → `unitesLegales[].dirigeant`
+- `searchEstablishments`   → `etablissements[].uniteLegale.dirigeant`
+
+**Important limitation:** the INSEE Sirene API does not expose director information for legal entities (SAS, SARL, SCI, associations…). For those, the `dirigeant` key is **not** injected — the original response is returned unchanged. To retrieve directors of legal entities, you need a complementary source such as the [Recherche d'entreprises API](https://recherche-entreprises.api.gouv.fr/) (which aggregates INPI/RNE data).
+
 ## Testing
 
 ```bash

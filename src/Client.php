@@ -51,7 +51,82 @@ class Client
             return $response->json();
         }
 
-        return $response->json();
+        return $this->enrichWithDirigeant($response->json());
+    }
+
+    /**
+     * Inject a `dirigeant` key into every `uniteLegale` node of the response
+     * when the unit is a natural person (entrepreneur individuel, micro-entrepreneur, EIRL).
+     *
+     * @param  array<string, mixed>  $response
+     * @return array<string, mixed>
+     */
+    private function enrichWithDirigeant(array $response): array
+    {
+        if (isset($response['uniteLegale']) && is_array($response['uniteLegale'])) {
+            $response['uniteLegale'] = $this->injectDirigeant($response['uniteLegale']);
+        }
+
+        if (isset($response['etablissement']['uniteLegale']) && is_array($response['etablissement']['uniteLegale'])) {
+            $response['etablissement']['uniteLegale'] = $this->injectDirigeant($response['etablissement']['uniteLegale']);
+        }
+
+        if (isset($response['unitesLegales']) && is_array($response['unitesLegales'])) {
+            foreach ($response['unitesLegales'] as $i => $unite) {
+                if (is_array($unite)) {
+                    $response['unitesLegales'][$i] = $this->injectDirigeant($unite);
+                }
+            }
+        }
+
+        if (isset($response['etablissements']) && is_array($response['etablissements'])) {
+            foreach ($response['etablissements'] as $i => $etab) {
+                if (is_array($etab) && isset($etab['uniteLegale']) && is_array($etab['uniteLegale'])) {
+                    $response['etablissements'][$i]['uniteLegale'] = $this->injectDirigeant($etab['uniteLegale']);
+                }
+            }
+        }
+
+        return $response;
+    }
+
+    /**
+     * @param  array<string, mixed>  $uniteLegale
+     * @return array<string, mixed>
+     */
+    private function injectDirigeant(array $uniteLegale): array
+    {
+        $dirigeant = $this->extractDirigeant($uniteLegale);
+
+        if ($dirigeant !== null) {
+            $uniteLegale['dirigeant'] = $dirigeant;
+        }
+
+        return $uniteLegale;
+    }
+
+    /**
+     * @param  array<string, mixed>  $uniteLegale
+     * @return array{nom: string, nomUsage: ?string, prenom: ?string, sexe: ?string}|null
+     */
+    private function extractDirigeant(array $uniteLegale): ?array
+    {
+        $nom = $uniteLegale['nomUniteLegale'] ?? null;
+
+        if (! is_string($nom) || $nom === '') {
+            return null;
+        }
+
+        $prenom = $uniteLegale['prenomUsuelUniteLegale']
+            ?? $uniteLegale['prenom1UniteLegale']
+            ?? null;
+
+        return [
+            'nom' => $nom,
+            'nomUsage' => $uniteLegale['nomUsageUniteLegale'] ?? null,
+            'prenom' => is_string($prenom) ? $prenom : null,
+            'sexe' => $uniteLegale['sexeUniteLegale'] ?? null,
+        ];
     }
 
     private function getAccessToken(): string

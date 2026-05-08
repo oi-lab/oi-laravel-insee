@@ -163,6 +163,170 @@ it('can obtain and cache new access token', function () {
     expect($token)->toBe('new-token-456');
 });
 
+it('extracts dirigeant from a personne physique on findSiret', function () {
+    Http::fake([
+        'api.insee.fr/api-sirene/3.11/siret/12345678901234' => Http::response([
+            'header' => ['statut' => 200],
+            'etablissement' => [
+                'siret' => '12345678901234',
+                'uniteLegale' => [
+                    'denominationUniteLegale' => null,
+                    'nomUniteLegale' => 'DUPONT',
+                    'nomUsageUniteLegale' => 'MARTIN',
+                    'prenomUsuelUniteLegale' => 'Jean',
+                    'prenom1UniteLegale' => 'Jean',
+                    'sexeUniteLegale' => 'M',
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $client = new Client('test-secret');
+    $result = $client->findSiret('12345678901234');
+
+    expect($result['etablissement']['uniteLegale']['dirigeant'])
+        ->toBe([
+            'nom' => 'DUPONT',
+            'nomUsage' => 'MARTIN',
+            'prenom' => 'Jean',
+            'sexe' => 'M',
+        ]);
+});
+
+it('extracts dirigeant from a personne physique on findSiren', function () {
+    Http::fake([
+        'api.insee.fr/api-sirene/3.11/siren/123456789' => Http::response([
+            'header' => ['statut' => 200],
+            'uniteLegale' => [
+                'siren' => '123456789',
+                'denominationUniteLegale' => null,
+                'nomUniteLegale' => 'DURAND',
+                'nomUsageUniteLegale' => null,
+                'prenomUsuelUniteLegale' => 'Marie',
+                'sexeUniteLegale' => 'F',
+            ],
+        ], 200),
+    ]);
+
+    $client = new Client('test-secret');
+    $result = $client->findSiren('123456789');
+
+    expect($result['uniteLegale']['dirigeant'])
+        ->toBe([
+            'nom' => 'DURAND',
+            'nomUsage' => null,
+            'prenom' => 'Marie',
+            'sexe' => 'F',
+        ]);
+});
+
+it('falls back to prenom1UniteLegale when prenomUsuelUniteLegale is missing', function () {
+    Http::fake([
+        'api.insee.fr/api-sirene/3.11/siren/123456789' => Http::response([
+            'header' => ['statut' => 200],
+            'uniteLegale' => [
+                'siren' => '123456789',
+                'nomUniteLegale' => 'PETIT',
+                'prenom1UniteLegale' => 'Paul',
+                'sexeUniteLegale' => 'M',
+            ],
+        ], 200),
+    ]);
+
+    $client = new Client('test-secret');
+    $result = $client->findSiren('123456789');
+
+    expect($result['uniteLegale']['dirigeant']['prenom'])->toBe('Paul');
+});
+
+it('does not inject dirigeant for a personne morale', function () {
+    Http::fake([
+        'api.insee.fr/api-sirene/3.11/siren/123456789' => Http::response([
+            'header' => ['statut' => 200],
+            'uniteLegale' => [
+                'siren' => '123456789',
+                'denominationUniteLegale' => 'ACME SAS',
+                'nomUniteLegale' => null,
+                'prenomUsuelUniteLegale' => null,
+            ],
+        ], 200),
+    ]);
+
+    $client = new Client('test-secret');
+    $result = $client->findSiren('123456789');
+
+    expect($result['uniteLegale'])->not->toHaveKey('dirigeant');
+});
+
+it('injects dirigeant for each item in searchCompanies results', function () {
+    Http::fake([
+        'api.insee.fr/api-sirene/3.11/siren*' => Http::response([
+            'header' => ['statut' => 200, 'total' => 2],
+            'unitesLegales' => [
+                [
+                    'siren' => '111111111',
+                    'nomUniteLegale' => 'DUPONT',
+                    'prenomUsuelUniteLegale' => 'Jean',
+                ],
+                [
+                    'siren' => '222222222',
+                    'denominationUniteLegale' => 'ACME SAS',
+                    'nomUniteLegale' => null,
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $client = new Client('test-secret');
+    $result = $client->searchCompanies(['q' => 'denomination:*']);
+
+    expect($result['unitesLegales'][0]['dirigeant']['nom'])->toBe('DUPONT')
+        ->and($result['unitesLegales'][0]['dirigeant']['prenom'])->toBe('Jean')
+        ->and($result['unitesLegales'][1])->not->toHaveKey('dirigeant');
+});
+
+it('injects dirigeant for each item in searchEstablishments results', function () {
+    Http::fake([
+        'api.insee.fr/api-sirene/3.11/siret*' => Http::response([
+            'header' => ['statut' => 200, 'total' => 1],
+            'etablissements' => [
+                [
+                    'siret' => '12345678901234',
+                    'uniteLegale' => [
+                        'nomUniteLegale' => 'BERNARD',
+                        'prenomUsuelUniteLegale' => 'Sophie',
+                        'sexeUniteLegale' => 'F',
+                    ],
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $client = new Client('test-secret');
+    $result = $client->searchEstablishments(['q' => 'nomUniteLegale:BERNARD']);
+
+    expect($result['etablissements'][0]['uniteLegale']['dirigeant'])
+        ->toBe([
+            'nom' => 'BERNARD',
+            'nomUsage' => null,
+            'prenom' => 'Sophie',
+            'sexe' => 'F',
+        ]);
+});
+
+it('does not enrich error responses', function () {
+    Http::fake([
+        'api.insee.fr/api-sirene/3.11/siret/00000000000000' => Http::response([
+            'header' => ['statut' => 404, 'message' => 'Not found'],
+        ], 404),
+    ]);
+
+    $client = new Client('test-secret');
+    $result = $client->findSiret('00000000000000');
+
+    expect($result)->not->toHaveKey('etablissement');
+});
+
 it('throws exception when token request fails', function () {
     Cache::shouldReceive('has')
         ->once()
