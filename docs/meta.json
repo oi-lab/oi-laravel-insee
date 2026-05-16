@@ -1,0 +1,7 @@
+{
+    "type": "package",
+    "name": "oi-lab/oi-laravel-insee",
+    "title": "OI Laravel INSEE",
+    "description": "French INSEE SIRENE API integration for company and establishment lookups",
+    "order": 30
+}

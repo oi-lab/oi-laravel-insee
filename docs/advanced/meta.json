@@ -1,0 +1,6 @@
+{
+    "type": "section",
+    "title": "Advanced",
+    "description": "Error handling, pagination, and patterns",
+    "order": 6
+}
