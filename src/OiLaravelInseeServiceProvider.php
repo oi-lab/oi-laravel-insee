@@ -3,6 +3,7 @@
 namespace OiLab\OiLaravelInsee;
 
 use Illuminate\Support\ServiceProvider;
+use OiLab\OiLaravelInsee\Console\Commands\InstallAiSkillCommand;
 
 class OiLaravelInseeServiceProvider extends ServiceProvider
 {
@@ -31,6 +32,10 @@ class OiLaravelInseeServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/oi-laravel-insee.php' => config_path('oi-laravel-insee.php'),
             ], 'oi-laravel-insee-config');
+
+            $this->commands([
+                InstallAiSkillCommand::class,
+            ]);
         }
     }
 }

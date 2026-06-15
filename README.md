@@ -220,6 +220,22 @@ The `dirigeant` key is injected at the same locations across all endpoints:
 
 **Important limitation:** the INSEE Sirene API does not expose director information for legal entities (SAS, SARL, SCI, associations…). For those, the `dirigeant` key is **not** injected — the original response is returned unchanged. To retrieve directors of legal entities, you need a complementary source such as the [Recherche d'entreprises API](https://recherche-entreprises.api.gouv.fr/) (which aggregates INPI/RNE data).
 
+## AI Assistant Skills
+
+The package ships an AI context skill describing how to use it (SIREN/SIRET lookups, the `Insee` facade and `Client`, search syntax, and `dirigeant` injection). Install it with the unified `oi:skills` command, provided by the `oi-lab/oi-laravel-development` package, which discovers and installs the skills shipped by every installed `oi-lab/*` package:
+
+```bash
+php artisan oi:skills
+```
+
+To install only this package's skill non-interactively:
+
+```bash
+php artisan oi:skills oilab-laravel-insee --project   # or --global
+```
+
+This copies the skill to `.claude/skills/oilab-laravel-insee/` and `.junie/skills/oilab-laravel-insee/`, and adds an `=== oi-lab/oi-laravel-insee rules ===` section to your `CLAUDE.md`. The package-local `php artisan oi-insee:install-ai-skill` command is still available but **deprecated** in favor of `oi:skills`. See [docs/advanced/skills.md](docs/advanced/skills.md).
+
 ## Testing
 
 ```bash

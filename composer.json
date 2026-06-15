@@ -30,6 +30,14 @@
             "OiLab\\OiLaravelInsee\\Tests\\": "tests/"
         }
     },
+    "scripts": {
+        "sync-ai-skills": [
+            "@php scripts/sync-ai-skills.php"
+        ],
+        "post-autoload-dump": [
+            "@php scripts/sync-ai-skills.php"
+        ]
+    },
     "extra": {
         "laravel": {
             "providers": [
@@ -38,6 +46,17 @@
             "aliases": {
                 "Insee": "OiLab\\OiLaravelInsee\\Facades\\Insee"
             }
+        },
+        "oi-lab": {
+            "skills": [
+                {
+                    "name": "oilab-laravel-insee",
+                    "description": "Query the French INSEE SIRENE API (SIREN/SIRET)",
+                    "path": "resources/stubs/ai-skill.md",
+                    "rules": "resources/stubs/claude-rules.md",
+                    "section": "oi-lab/oi-laravel-insee rules"
+                }
+            ]
         }
     },
     "minimum-stability": "dev",
