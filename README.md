@@ -220,6 +220,54 @@ The `dirigeant` key is injected at the same locations across all endpoints:
 
 **Important limitation:** the INSEE Sirene API does not expose director information for legal entities (SAS, SARL, SCI, associations…). For those, the `dirigeant` key is **not** injected — the original response is returned unchanged. To retrieve directors of legal entities, you need a complementary source such as the [Recherche d'entreprises API](https://recherche-entreprises.api.gouv.fr/) (which aggregates INPI/RNE data).
 
+## Typed Responses (DTO)
+
+In addition to the array-returning methods, the package exposes typed
+[`spatie/laravel-data`](https://spatie.be/docs/laravel-data) DTOs. Each typed
+method mirrors its array counterpart but returns a strongly-typed object with IDE
+autocompletion, so you no longer have to remember the INSEE field names or guess
+which keys are present.
+
+```php
+use OiLab\OiLaravelInsee\Facades\Insee;
+
+$response = Insee::siret('12345678901234');        // OiLab\OiLaravelInsee\Data\SiretResponse
+$response->header->statut;                          // 200
+$response->etablissement->siret;                    // '12345678901234'
+$response->etablissement->adresseEtablissement->codePostalEtablissement;
+$response->etablissement->uniteLegale->denominationUniteLegale;
+
+$company = Insee::siren('123456789');              // SirenResponse
+$company->uniteLegale->dirigeant?->nom;             // Dirigeant DTO, or null for a legal entity
+
+$companies = Insee::companies(['q' => 'denomination:ACME']);       // SirenSearchResponse
+$companies->header->total;
+foreach ($companies->unitesLegales as $unite) {     // UniteLegale[]
+    $unite->siren;
+}
+
+$establishments = Insee::establishments(['q' => 'codePostalEtablissement:75001']); // SiretSearchResponse
+foreach ($establishments->etablissements as $etablissement) {                       // Etablissement[]
+    $etablissement->siret;
+}
+```
+
+| Typed method                     | Returns                | Array counterpart        |
+|----------------------------------|------------------------|--------------------------|
+| `siret(string $siret)`           | `SiretResponse`        | `findSiret()`            |
+| `siren(string $siren)`           | `SirenResponse`        | `findSiren()`            |
+| `companies(array $params)`       | `SirenSearchResponse`  | `searchCompanies()`      |
+| `establishments(array $params)`  | `SiretSearchResponse`  | `searchEstablishments()` |
+
+All DTOs live in the `OiLab\OiLaravelInsee\Data` namespace
+(`SiretResponse`, `SirenResponse`, `SirenSearchResponse`, `SiretSearchResponse`,
+`Etablissement`, `UniteLegale`, `AdresseEtablissement`, `PeriodeUniteLegale`,
+`PeriodeEtablissement`, `Dirigeant`, `ResponseHeader`). Fields are nullable so
+partial INSEE responses never throw, and being `spatie/laravel-data` objects they
+serialize back to arrays/JSON with `->toArray()` / `->toJson()`. The `dirigeant`
+node is exposed as a `Dirigeant` DTO (or `null` for legal entities), following the
+same rules as the array API above.
+
 ## AI Assistant Skills
 
 The package ships an AI context skill describing how to use it (SIREN/SIRET lookups, the `Insee` facade and `Client`, search syntax, and `dirigeant` injection). Install it with the unified `oi:skills` command, provided by the `oi-lab/oi-laravel-development` package, which discovers and installs the skills shipped by every installed `oi-lab/*` package:

@@ -5,6 +5,10 @@ namespace OiLab\OiLaravelInsee;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use OiLab\OiLaravelInsee\Data\SirenResponse;
+use OiLab\OiLaravelInsee\Data\SirenSearchResponse;
+use OiLab\OiLaravelInsee\Data\SiretResponse;
+use OiLab\OiLaravelInsee\Data\SiretSearchResponse;
 
 class Client
 {
@@ -40,6 +44,42 @@ class Client
     public function getApiStatus(): array
     {
         return $this->makeRequest('/informations');
+    }
+
+    /**
+     * Typed counterpart of findSiret().
+     */
+    public function siret(string $siret): SiretResponse
+    {
+        return SiretResponse::from($this->findSiret($siret));
+    }
+
+    /**
+     * Typed counterpart of findSiren().
+     */
+    public function siren(string $siren): SirenResponse
+    {
+        return SirenResponse::from($this->findSiren($siren));
+    }
+
+    /**
+     * Typed counterpart of searchCompanies().
+     *
+     * @param  array<string, mixed>  $params
+     */
+    public function companies(array $params): SirenSearchResponse
+    {
+        return SirenSearchResponse::from($this->searchCompanies($params));
+    }
+
+    /**
+     * Typed counterpart of searchEstablishments().
+     *
+     * @param  array<string, mixed>  $params
+     */
+    public function establishments(array $params): SiretSearchResponse
+    {
+        return SiretSearchResponse::from($this->searchEstablishments($params));
     }
 
     private function makeRequest(string $endpoint, array $params = []): array

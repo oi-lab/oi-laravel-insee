@@ -11,6 +11,10 @@ use OiLab\OiLaravelInsee\Client;
  * @method static array searchCompanies(array $params)
  * @method static array searchEstablishments(array $params)
  * @method static array getApiStatus()
+ * @method static \OiLab\OiLaravelInsee\Data\SiretResponse siret(string $siret)
+ * @method static \OiLab\OiLaravelInsee\Data\SirenResponse siren(string $siren)
+ * @method static \OiLab\OiLaravelInsee\Data\SirenSearchResponse companies(array $params)
+ * @method static \OiLab\OiLaravelInsee\Data\SiretSearchResponse establishments(array $params)
  *
  * @see Client
  */

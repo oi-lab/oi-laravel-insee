@@ -5,12 +5,14 @@ namespace OiLab\OiLaravelInsee\Tests;
 use OiLab\OiLaravelInsee\Facades\Insee;
 use OiLab\OiLaravelInsee\OiLaravelInseeServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\LaravelData\LaravelDataServiceProvider;
 
 class TestCase extends Orchestra
 {
     protected function getPackageProviders($app): array
     {
         return [
+            LaravelDataServiceProvider::class,
             OiLaravelInseeServiceProvider::class,
         ];
     }

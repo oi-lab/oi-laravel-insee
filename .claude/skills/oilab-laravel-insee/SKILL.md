@@ -35,6 +35,28 @@ Insee::getApiStatus();                // current API status
 
 All methods return the decoded API response as an `array`.
 
+## Typed Methods (spatie/laravel-data DTOs)
+
+Each lookup has a typed counterpart returning a `spatie/laravel-data` DTO from the
+`OiLab\OiLaravelInsee\Data` namespace. Prefer these when you want typed access /
+IDE autocompletion; use the array methods when you need the raw payload.
+
+```php
+Insee::siret('12345678901234');                 // SiretResponse  (≈ findSiret)
+Insee::siren('123456789');                      // SirenResponse  (≈ findSiren)
+Insee::companies(['q' => 'denomination:ACME']); // SirenSearchResponse (≈ searchCompanies)
+Insee::establishments(['q' => '...']);          // SiretSearchResponse (≈ searchEstablishments)
+```
+
+Shape: `SiretResponse{ header: ?ResponseHeader, etablissement: ?Etablissement }`,
+`SirenResponse{ header, uniteLegale: ?UniteLegale }`, and the two search responses
+wrap `etablissements: Etablissement[]` / `unitesLegales: UniteLegale[]`. An
+`Etablissement` carries `uniteLegale`, `adresseEtablissement`/`adresse2Etablissement`
+(`AdresseEtablissement`) and `periodesEtablissement` (`PeriodeEtablissement[]`); a
+`UniteLegale` carries `periodesUniteLegale` (`PeriodeUniteLegale[]`) and a nullable
+`dirigeant` (`Dirigeant`). All fields are nullable, so partial responses never throw.
+Call `->toArray()` / `->toJson()` to serialize back.
+
 ## Search Query Syntax
 
 The `q` parameter uses INSEE's field:value syntax:
