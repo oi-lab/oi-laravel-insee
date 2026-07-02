@@ -6,7 +6,7 @@
     "authors": [
         {
             "name": "OI Lab",
-            "email": "contact@oi-lab.com"
+            "email": "olivier@olacombe.com"
         }
     ],
     "require": {
@@ -14,12 +14,13 @@
         "illuminate/support": "^11.0|^12.0|^13.0",
         "illuminate/http": "^11.0|^12.0|^13.0",
         "illuminate/cache": "^11.0|^12.0|^13.0",
-        "spatie/laravel-data": "^4.0"
+        "spatie/laravel-data": "^4.23"
     },
     "require-dev": {
-        "pestphp/pest": "^4.0",
+        "laravel/pint": "^1.29",
         "orchestra/testbench": "^9.0|^10.0|^11.0",
-        "laravel/pint": "^1.0"
+        "pestphp/pest": "^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^3.0|^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -37,7 +38,9 @@
         ],
         "post-autoload-dump": [
             "@php scripts/sync-ai-skills.php"
-        ]
+        ],
+        "test": "@php vendor/bin/pest",
+        "lint": "@php vendor/bin/pint"
     },
     "extra": {
         "laravel": {
@@ -60,7 +63,7 @@
             ]
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
         "sort-packages": true,

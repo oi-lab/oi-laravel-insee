@@ -9,6 +9,23 @@
 
 A Laravel package for integrating with the French INSEE SIRENE API to retrieve company and establishment information.
 
+## Features
+
+- Look up companies by SIREN and establishments by SIRET
+- Full-text search over companies (`/siren`) and establishments (`/siret`) with the SIRENE query syntax
+- API status endpoint (`/informations`)
+- Typed responses via `spatie/laravel-data` DTOs, alongside raw-array methods
+- Automatic `dirigeant` extraction for natural persons (entrepreneur individuel, micro-entrepreneur, EIRL)
+- Access-token caching for OAuth-based authentication
+- `Insee` facade, `insee` container binding, and constructor-injectable `Client`
+
+## Requirements
+
+- PHP 8.2+
+- Laravel 11, 12, or 13
+- [spatie/laravel-data](https://github.com/spatie/laravel-data) 4.x
+- INSEE SIRENE API credentials ([api.insee.fr](https://api.insee.fr/catalogue/))
+
 ## Installation
 
 You can install the package via composer:
