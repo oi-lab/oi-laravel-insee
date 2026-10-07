@@ -15,6 +15,10 @@ use OiLab\OiLaravelInsee\Client;
  * @method static \OiLab\OiLaravelInsee\Data\SirenResponse siren(string $siren)
  * @method static \OiLab\OiLaravelInsee\Data\SirenSearchResponse companies(array $params)
  * @method static \OiLab\OiLaravelInsee\Data\SiretSearchResponse establishments(array $params)
+ * @method static \Generator<int, \OiLab\OiLaravelInsee\Data\SiretSearchPage> searchEstablishmentsLazily(\OiLab\OiLaravelInsee\Search\SiretSearchCriteria $criteria, ?string $cursor = null, int $pageSize = 1000)
+ * @method static int countEstablishments(\OiLab\OiLaravelInsee\Search\SiretSearchCriteria $criteria)
+ * @method static array<string, int> countEstablishmentsBy(\OiLab\OiLaravelInsee\Search\SiretSearchCriteria $criteria, string $field)
+ * @method static \OiLab\OiLaravelInsee\Data\Etablissement|null establishmentOrFail(string $siret)
  *
  * @see Client
  */

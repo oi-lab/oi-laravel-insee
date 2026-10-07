@@ -57,6 +57,33 @@ wrap `etablissements: Etablissement[]` / `unitesLegales: UniteLegale[]`. An
 `dirigeant` (`Dirigeant`). All fields are nullable, so partial responses never throw.
 Call `->toArray()` / `->toJson()` to serialize back.
 
+## Multicriteria Search, Quota and Typed Exceptions
+
+Never write the `q` of a recurring search by hand: build it with `SiretSearchCriteria` (codes only, never labels).
+
+```php
+use OiLab\OiLaravelInsee\Enums\WorkforceRange;
+use OiLab\OiLaravelInsee\Search\SiretSearchCriteria;
+
+$criteria = SiretSearchCriteria::make()
+    ->headquartersOnly()->activeOnly()->publicDiffusionOnly()
+    ->workforceRanges(WorkforceRange::within(20, 249))
+    ->departmentCodes(['34'])->communeCodes([...])->postalCodes([...])->nafCodes(['62.01Z'])
+    ->fields(['siret', 'siren']);
+
+Insee::countEstablishments($criteria);                       // int
+Insee::countEstablishmentsBy($criteria, 'trancheEffectifsUniteLegale'); // array<string, int>
+foreach (Insee::searchEstablishmentsLazily($criteria, $cursor) as $page) {   // SiretSearchPage
+    $page->etablissements; $page->nextCursor; $page->total;  // persist nextCursor to resume
+}
+Insee::establishmentOrFail($siret);                          // Etablissement|null
+```
+
+- These methods throw `InseeException` subclasses: `InseeQuotaExceededException` (`retryAt`), `InseeUnavailableException`, `InseeRequestException`. A 404 is an empty page / `0` / `null`. The historical methods (`findSiret()`, `findSiren()`, `search*()`) never throw and keep returning the error array.
+- A shared limiter (30/min, 2 000/h, in the cache store) covers every call. Searches and counts stop at `rate_limits.background_ceiling`; unit calls keep the reserve. Historical calls wait 3 seconds at most and return a `header.statut = 429` array when the hour is spent.
+- Long queries go out as `POST` automatically; more than 1 000 alternatives are grouped in parenthesised chunks.
+- The active filter is `periode(etatAdministratifEtablissement:A AND -dateFin:*)` (historised variable: `periode(...)` is mandatory).
+
 ## Search Query Syntax
 
 The `q` parameter uses INSEE's field:value syntax:

@@ -432,3 +432,15 @@ class MonitorInseeApiCommand extends Command
 - Validate input data before making API calls
 - Provide user-friendly error messages
 - Consider graceful degradation when API is unavailable
+
+## Typed Exceptions (multicriteria search)
+
+`searchEstablishmentsLazily()`, `countEstablishments()`, `countEstablishmentsBy()` and `establishmentOrFail()` do not return error arrays: they throw, all under `OiLab\OiLaravelInsee\Exceptions\InseeException`.
+
+| Exception | Cause |
+|-----------|-------|
+| `InseeQuotaExceededException` | 429, exhausted quota headers or local budget; `retryAt` says when to come back |
+| `InseeUnavailableException` | 5xx, maintenance or network error, after the retries |
+| `InseeRequestException` | 4xx rejected by the API (never retried), with the INSEE message |
+
+A 404 "no result" is an empty page, a count of `0` or `null` from `establishmentOrFail()`. The historical methods keep returning the error body as an array.

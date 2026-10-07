@@ -60,6 +60,31 @@ return [
 ];
 ```
 
+## Rate limits, retries and search options
+
+```php
+'rate_limits' => [
+    'per_minute' => env('INSEE_RATE_PER_MINUTE', 30),
+    'per_hour' => env('INSEE_RATE_PER_HOUR', 2000),
+    'background_ceiling' => env('INSEE_BACKGROUND_CEILING', 1600),
+    'max_wait_seconds' => env('INSEE_MAX_WAIT_SECONDS', 65),
+    'legacy_max_wait_seconds' => env('INSEE_LEGACY_MAX_WAIT_SECONDS', 3),
+],
+'retry' => ['delays' => [1, 3, 9]],
+'post_threshold' => env('INSEE_POST_THRESHOLD', 2000),
+'mask_null_values' => env('INSEE_MASK_NULL_VALUES', true),
+```
+
+- `per_minute` / `per_hour` — the INSEE limits (30 and 2 000, they may change). One limiter, stored in the cache (set `cache.limiter` to a Redis store in production), shared by every call.
+- `background_ceiling` — hourly calls after which searches and counts throw `InseeQuotaExceededException`, keeping the rest of the hour for unit calls.
+- `max_wait_seconds` — longest wait of the typed methods when the minute window is full; beyond it they throw.
+- `legacy_max_wait_seconds` — longest wait of `findSiret()` and the other historical methods, which then call anyway and never throw.
+- `retry.delays` — seconds to wait before each new attempt on 5xx and network errors (never on 4xx); an empty array disables retries.
+- `post_threshold` — URL length above which a search is sent as a `POST`.
+- `mask_null_values` — sends `masquerValeursNulles=true`.
+
+After upgrading, publish the configuration again (or add these keys): the defaults apply when they are missing.
+
 ## Configuration Options
 
 ### client_secret (Required)
