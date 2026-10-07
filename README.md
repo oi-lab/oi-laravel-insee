@@ -15,6 +15,8 @@ A Laravel package for integrating with the French INSEE SIRENE API to retrieve c
 - Full-text search over companies (`/siren`) and establishments (`/siret`) with the SIRENE query syntax
 - API status endpoint (`/informations`)
 - Typed responses via `spatie/laravel-data` DTOs, alongside raw-array methods
+- Multicriteria `/siret` search from typed criteria, paginated by cursor, with counts and facets
+- A two-window rate limiter (30/min, 2 000/h) shared by every call, quota-header aware, with typed exceptions and retries
 - Automatic `dirigeant` extraction for natural persons (entrepreneur individuel, micro-entrepreneur, EIRL)
 - Access-token caching for OAuth-based authentication
 - `Insee` facade, `insee` container binding, and constructor-injectable `Client`
@@ -284,6 +286,87 @@ partial INSEE responses never throw, and being `spatie/laravel-data` objects the
 serialize back to arrays/JSON with `->toArray()` / `->toJson()`. The `dirigeant`
 node is exposed as a `Dirigeant` DTO (or `null` for legal entities), following the
 same rules as the array API above.
+
+## Multicriteria Search (cursor-paginated)
+
+`SiretSearchCriteria` builds the `q` parameter from typed criteria, so no Sirene syntax leaks into your code. Every filter is on **codes**, never on labels; the zone filters (communes, postal codes, departments) are alternatives of one another.
+
+```php
+use OiLab\OiLaravelInsee\Enums\WorkforceRange;
+use OiLab\OiLaravelInsee\Facades\Insee;
+use OiLab\OiLaravelInsee\Search\SiretSearchCriteria;
+
+$criteria = SiretSearchCriteria::make()
+    ->headquartersOnly()                                   // etablissementSiege:true
+    ->activeOnly()                                         // current period of etatAdministratifEtablissement:A
+    ->publicDiffusionOnly()                                // statutDiffusionEtablissement:O
+    ->workforceRanges(WorkforceRange::within(20, 249))     // 12, 21, 22, 31
+    ->departmentCodes(['34'])                              // prefix of the commune code (34*)
+    ->communeCodes(['31555'])                              // exact commune codes
+    ->postalCodes(['75001'])
+    ->nafCodes(['62.01Z'])                                 // optional
+    ->fields(['siret', 'siren', 'denominationUniteLegale', 'trancheEffectifsUniteLegale']);
+
+$criteria->toQuery();   // the q parameter
+
+Insee::countEstablishments($criteria);                                  // int, nombre=0
+Insee::countEstablishmentsBy($criteria, 'trancheEffectifsUniteLegale'); // ['12' => 1476, '21' => 583, ...]
+
+foreach (Insee::searchEstablishmentsLazily($criteria, cursor: $savedCursor, pageSize: 1000) as $page) {
+    foreach ($page->etablissements as $etablissement) { /* ... */ }
+
+    $savedCursor = $page->nextCursor;   // persist it to resume the search later
+}
+```
+
+- Pages are `SiretSearchPage` (`etablissements`, `cursor`, `nextCursor`, `total`, `isLast()`). The search starts at `curseur=*` and stops when `curseurSuivant` equals `curseur`.
+- No result is an empty page (and a count of `0`), not an exception. A search without any criterion is refused.
+- Queries are sent as a `POST` (`application/x-www-form-urlencoded`) once the URL of a `GET` would exceed `post_threshold` characters (2 000 by default). More than 1 000 alternatives are grouped in parenthesised chunks of at most 1 000.
+- `fields()` maps to `champs`, `masquerValeursNulles=true` and `Accept-Encoding: gzip` lighten the responses.
+- `Insee::establishmentOrFail($siret)` returns the `Etablissement`, or `null` when the INSEE does not know it, and throws the typed exceptions below. Unlike the searches it can use the whole hourly quota.
+
+### Workforce ranges
+
+`WorkforceRange` lists the INSEE codes (`NN`, `00`, `01`, `02`, `03`, `11`, `12`, `21`, `22`, `31`, `32`, `41`, `42`, `51`, `52`, `53`) with `min()`, `max()` and `label()`; `WorkforceRange::within(?int $min, ?int $max)` returns the ranges entirely inside a headcount interval (an INSEE range cannot split 250: `32` is 250 to 499).
+
+## Rate Limiting and Typed Exceptions
+
+The API allows **30 calls per minute and 2 000 per hour** (the INSEE may change them). One limiter, kept in the cache store (Redis in production) and shared by **every** call of the package, enforces both windows; the quota headers of each response (`x-quota-*`, `x-rate-limit-*`) keep it in line with the real remainder.
+
+| Calls | Minute window full | Hourly quota exhausted |
+|-------|--------------------|------------------------|
+| `searchEstablishmentsLazily()`, `countEstablishments()`, `countEstablishmentsBy()` (background) | waits (up to `rate_limits.max_wait_seconds`) | throws `InseeQuotaExceededException`, from `rate_limits.background_ceiling` (1 600/2 000) |
+| `establishmentOrFail()` (unit) | waits | throws `InseeQuotaExceededException` at the real end of the quota |
+| `findSiret()`, `findSiren()`, `searchEstablishments()`... (historical) | waits `legacy_max_wait_seconds` at most, then calls anyway | returns an INSEE-shaped array `['header' => ['statut' => 429, 'message' => ...]]` |
+
+The historical methods never throw, never retry and keep returning the error body as an array; the typed methods throw, all under `OiLab\OiLaravelInsee\Exceptions\InseeException` (`statusCode`):
+
+- `InseeQuotaExceededException` (429 or exhausted budget): `retryAt` is the date to come back (reset of the hour, else of the minute).
+- `InseeUnavailableException`: 5xx, maintenance or network error, after the retries (1 s, 3 s, 9 s by default). 4xx are never retried.
+- `InseeRequestException`: the API rejected the request (400 bad `q`, 401, 403...), with the INSEE message.
+
+```php
+try {
+    $etablissement = Insee::establishmentOrFail($siret);
+} catch (InseeQuotaExceededException $e) {
+    $this->release($e->retryAt->diffInSeconds());   // postpone, nothing is lost
+} catch (InseeUnavailableException $e) {
+    // retry later
+}
+```
+
+## Notes on the API
+
+Checked against the real Sirene 3.11 API on 7 October 2026:
+
+- **Quota headers**: `x-quota-limit`, `x-quota-remaining`, `x-quota-reset` (hour) and `x-rate-limit-limit`, `x-rate-limit-remaining`, `x-rate-limit-reset` (minute). Both `reset` values are epoch timestamps in **milliseconds**. The hourly window starts at the first call of the hour.
+- **Authentication**: `X-INSEE-Api-Key-Integration` works; `Authorization: Bearer <key>` is refused (401). The package keeps the former.
+- **Historised variables**: `etatAdministratifEtablissement` cannot be searched without `periode(...)` (400 "Erreur de syntaxe dans le paramètre q"), and `periode(etatAdministratifEtablissement:A)` alone also matches past periods. The **current** period is `periode(etatAdministratifEtablissement:A AND -dateFin:*)`, which is what `activeOnly()` sends; `nafCodes()` uses the same form on `activitePrincipaleEtablissement`.
+- **Departments**: the wildcard works on the commune code (`codeCommuneEtablissement:34*`, `2A*`, `971*`), so `departmentCodes()` is supported.
+- **Legal-unit variables** such as `trancheEffectifsUniteLegale` are searchable from `/siret`: no second call on `/siren`.
+- **No result** is an HTTP 404 with `header.statut: 404`; an unknown or invalid key is a 401 with `{"message": "Unauthorized"}`.
+- **Facets**: `facette.champ` with `nombre=0` answers `facettes[].comptages[]` (`valeur`, `nombre`).
+- A `POST` with `application/x-www-form-urlencoded`, gzip, `champs` and `masquerValeursNulles=true` are accepted, as are 1 000+ alternatives in one query (the package still groups them by 1 000, as the documentation requires).
 
 ## AI Assistant Skills
 
